@@ -2,21 +2,24 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/anacrolix/torrent"
+	"github.com/dustin/go-humanize"
 	"github.com/julienschmidt/httprouter"
 )
 
 var t torrent.Torrent
+var seed *bool
 
 func main() {
 	var client *torrent.Client
 
-	flag.Bool("seed", true, "Seed after finished downloading")
+	seed = flag.Bool("seed", true, "Seed after finished downloading")
 	flag.Parse()
 	if len(flag.Args()) == 0 {
 		usage()
@@ -25,7 +28,7 @@ func main() {
 
 	client, err := torrent.NewClient(&torrent.Config{
 		DataDir:  os.TempDir(),
-		NoUpload: true,
+		NoUpload: !(*seed),
 	})
 
 	if err != nil {
