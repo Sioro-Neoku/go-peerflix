@@ -84,7 +84,7 @@ func getLargestFile() torrent.File {
 
 func getNewFileReader(f torrent.File) SeekableContent {
 	reader := t.NewReader()
-	reader.SetReadahead(int64(128 * 1024))
+	reader.SetReadahead(f.Length() / 100)
 	reader.SetResponsive()
 	reader.Seek(f.Offset(), os.SEEK_SET)
 
