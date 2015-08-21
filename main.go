@@ -56,12 +56,16 @@ func main() {
 }
 
 func render() {
+	percentage := float64(t.BytesCompleted()) / float64(t.Length()) * 100
+	complete := humanize.Bytes(uint64(t.BytesCompleted()))
+	size := humanize.Bytes(uint64(t.Length()))
+	connections := len(t.Conns)
 
-	/*
-		print("\033[H\033[2J")
-		fmt.Println(t)
-		log.Printf("t = %#v\n", t.Files())
-	*/
+	print("\033[H\033[2J")
+	fmt.Println(t.Name())
+	fmt.Println("=============================================================")
+	fmt.Printf("%s/%s %.2f%%\n", complete, size, percentage)
+	fmt.Printf("Connections: %d\n", connections)
 }
 
 func usage() {
