@@ -41,11 +41,13 @@ func main() {
 		os.Exit(2)
 	}
 
+	// Start downloading files.
 	go func() {
 		<-t.GotInfo()
 		t.DownloadAll()
 	}()
 
+	// Http handler.
 	go func() {
 		router := httprouter.New()
 		router.GET("/", getFile)
@@ -89,21 +91,9 @@ func getLargestFile() torrent.File {
 	return target
 }
 
-func getNewFileReader(f torrent.File) SeekableContent {
-	reader := t.NewReader()
-	reader.SetReadahead(f.Length() / 100)
-	reader.SetResponsive()
-	reader.Seek(f.Offset(), os.SEEK_SET)
-
-	return &FileEntry{
-		File:   &f,
-		Reader: reader,
-	}
-}
-
 func getFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	target := getLargestFile()
-	entry := getNewFileReader(target)
+	entry := NewFileReader(target)
 	defer entry.Close()
 
 	http.ServeContent(w, r, target.DisplayPath(), time.Now(), entry)
