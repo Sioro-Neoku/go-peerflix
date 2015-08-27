@@ -17,6 +17,7 @@ import (
 var t torrent.Torrent
 var seed *bool
 var vlc *bool
+var progress int64
 
 func main() {
 	var client *torrent.Client
@@ -85,6 +86,10 @@ func readyForPlayback() bool {
 }
 
 func render() {
+	var currentProgress = t.BytesCompleted()
+	speed := humanize.Bytes(uint64(currentProgress-progress)) + "/s"
+	progress = currentProgress
+
 	percentage := float64(t.BytesCompleted()) / float64(t.Length()) * 100
 	complete := humanize.Bytes(uint64(t.BytesCompleted()))
 	size := humanize.Bytes(uint64(t.Length()))
@@ -94,6 +99,9 @@ func render() {
 	fmt.Println(t.Name())
 	fmt.Println("=============================================================")
 	fmt.Printf("%s/%s %.2f%%\n", complete, size, percentage)
+	if t.BytesCompleted() < t.Length() {
+		fmt.Println(speed)
+	}
 	fmt.Printf("Connections: %d\n", connections)
 }
 
