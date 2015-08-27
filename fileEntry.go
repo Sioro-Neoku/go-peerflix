@@ -31,9 +31,16 @@ func (f FileEntry) Close() error {
 	return f.Reader.Close()
 }
 
+// NewFileReader sets up a torrent file for streaming reading.
 func NewFileReader(f torrent.File) SeekableContent {
+	// We read ahead 1% of the file continuously.
+	var readahead = f.Length() / 100
+
+	// We begin by prioritizing 5% of the beginning of the file.
+	f.PrioritizeRegion(f.Offset(), readahead*5)
+
 	reader := t.NewReader()
-	reader.SetReadahead(f.Length() / 100)
+	reader.SetReadahead(readahead)
 	reader.SetResponsive()
 	reader.Seek(f.Offset(), os.SEEK_SET)
 
