@@ -11,7 +11,6 @@ import (
 
 	"github.com/anacrolix/torrent"
 	"github.com/dustin/go-humanize"
-	"github.com/julienschmidt/httprouter"
 )
 
 var t torrent.Torrent
@@ -65,9 +64,8 @@ func main() {
 
 	// Http handler.
 	go func() {
-		router := httprouter.New()
-		router.GET("/", getFile)
-		log.Fatal(http.ListenAndServe(":8080", router))
+		http.HandleFunc("/", getFile)
+		log.Fatal(http.ListenAndServe(":8080", nil))
 	}()
 
 	if *vlc {
@@ -135,7 +133,7 @@ func getLargestFile() torrent.File {
 	return target
 }
 
-func getFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func getFile(w http.ResponseWriter, r *http.Request) {
 	target := getLargestFile()
 	entry, err := NewFileReader(target)
 	if err != nil {
