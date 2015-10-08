@@ -66,9 +66,8 @@ func main() {
 			}
 			log.Printf("Playing in vlc")
 
-			//out, err := exec.Command("/usr/bin/open -a vlc \"http://localhost:8080\"").Output()
-			err := exec.Command("/usr/bin/open", "-a", "-vlc", "http://localhost:8080").Run()
-			log.Printf("err = %#v\n", err)
+			// @todo decide command to run based on os.
+			exec.Command("open", "-a", "vlc", "http://localhost:8080").Start()
 		}()
 	}
 
