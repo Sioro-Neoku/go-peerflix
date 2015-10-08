@@ -20,8 +20,6 @@ var vlc *bool
 var progress int64
 
 func main() {
-	//var client *torrent.Client
-
 	seed = flag.Bool("seed", true, "Seed after finished downloading")
 	vlc = flag.Bool("vlc", false, "Open vlc to play the file")
 	flag.Parse()
@@ -124,7 +122,12 @@ func getLargestFile() torrent.File {
 
 func getFile(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	target := getLargestFile()
-	entry := NewFileReader(target)
+	entry, err := NewFileReader(target)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	defer entry.Close()
 
 	http.ServeContent(w, r, target.DisplayPath(), time.Now(), entry)
