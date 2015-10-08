@@ -19,6 +19,8 @@ var seed *bool
 var vlc *bool
 var progress int64
 
+const clearScreen = "\033[H\033[2J"
+
 func main() {
 	seed = flag.Bool("seed", true, "Seed after finished downloading")
 	vlc = flag.Bool("vlc", false, "Open vlc to play the file")
@@ -60,7 +62,6 @@ func main() {
 		go func() {
 			for !readyForPlayback() {
 				time.Sleep(time.Second)
-				log.Printf("Not playing")
 			}
 			log.Printf("Playing in vlc")
 
@@ -92,10 +93,12 @@ func render() {
 	size := humanize.Bytes(uint64(t.Length()))
 	connections := len(t.Conns)
 
-	print("\033[H\033[2J")
+	print(clearScreen)
 	fmt.Println(t.Name())
 	fmt.Println("=============================================================")
-	fmt.Printf("Progress: \t%s / %s  %.2f%%\n", complete, size, percentage)
+	if t.BytesCompleted() > 0 {
+		fmt.Printf("Progress: \t%s / %s  %.2f%%\n", complete, size, percentage)
+	}
 	if t.BytesCompleted() < t.Length() {
 		fmt.Printf("Download speed: %s\n", speed)
 	}
