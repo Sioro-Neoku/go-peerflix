@@ -21,15 +21,26 @@ var progress int64
 
 const clearScreen = "\033[H\033[2J"
 
+// Exit statuses.
+const (
+	_                       = iota
+	exitNoTorrentProvided   = iota
+	exitErrorCreatingClient = iota
+	exitErrorAddingTorrent  = iota
+)
+
 func main() {
+	// Set up flags.
 	seed = flag.Bool("seed", true, "Seed after finished downloading")
 	vlc = flag.Bool("vlc", false, "Open vlc to play the file")
+
 	flag.Parse()
 	if len(flag.Args()) == 0 {
 		usage()
-		os.Exit(1)
+		os.Exit(exitNoTorrentProvided)
 	}
 
+	// Start up the torrent client.
 	client, err := torrent.NewClient(&torrent.Config{
 		DataDir:  os.TempDir(),
 		NoUpload: !(*seed),
@@ -37,12 +48,13 @@ func main() {
 
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(3)
+		os.Exit(exitErrorCreatingClient)
 	}
 
+	// Add the magnet url.
 	if t, err = client.AddMagnet(flag.Arg(0)); err != nil {
 		log.Fatal(err)
-		os.Exit(2)
+		os.Exit(exitErrorAddingTorrent)
 	}
 
 	// Start downloading files.
