@@ -20,7 +20,7 @@ var vlc *bool
 var progress int64
 
 func main() {
-	var client *torrent.Client
+	//var client *torrent.Client
 
 	seed = flag.Bool("seed", true, "Seed after finished downloading")
 	vlc = flag.Bool("vlc", false, "Open vlc to play the file")
@@ -98,11 +98,11 @@ func render() {
 	print("\033[H\033[2J")
 	fmt.Println(t.Name())
 	fmt.Println("=============================================================")
-	fmt.Printf("%s/%s %.2f%%\n", complete, size, percentage)
+	fmt.Printf("Progress: \t%s / %s  %.2f%%\n", complete, size, percentage)
 	if t.BytesCompleted() < t.Length() {
-		fmt.Println(speed)
+		fmt.Printf("Download speed: %s\n", speed)
 	}
-	fmt.Printf("Connections: %d\n", connections)
+	fmt.Printf("Connections: \t%d\n", connections)
 }
 
 func usage() {
