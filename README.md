@@ -12,5 +12,10 @@ go get github.com/Sioro-Neoku/go-peerflix
 go-peerflix [magnet url]
 ```
 
+To start playing in VLC (OsX only):
+```sh
+go-peerflix -vlc [magnet url]
+```
+
 ## License
 [MIT](https://raw.githubusercontent.com/Sioro-Neoku/go-peerflix/master/LICENSE)
