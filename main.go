@@ -143,5 +143,6 @@ func getFile(w http.ResponseWriter, r *http.Request) {
 
 	defer entry.Close()
 
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+t.Name()+"\"")
 	http.ServeContent(w, r, target.DisplayPath(), time.Now(), entry)
 }
