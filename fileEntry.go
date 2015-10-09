@@ -15,22 +15,13 @@ type SeekableContent interface {
 
 // FileEntry helps reading a torrent file.
 type FileEntry struct {
-	File   *torrent.File
-	Reader *torrent.Reader
-}
-
-func (f FileEntry) Read(p []byte) (n int, err error) {
-	return f.Reader.Read(p)
+	File *torrent.File
+	*torrent.Reader
 }
 
 // Seek seeks to the correct file position, paying attention to the offset.
 func (f FileEntry) Seek(offset int64, whence int) (int64, error) {
 	return f.Reader.Seek(offset+f.File.Offset(), whence)
-}
-
-// Close closes the file reader.
-func (f FileEntry) Close() error {
-	return f.Reader.Close()
 }
 
 // NewFileReader sets up a torrent file for streaming reading.
