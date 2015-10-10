@@ -46,13 +46,14 @@ func main() {
 	})
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error creating torrent client: %s\n", err)
 		os.Exit(exitErrorCreatingClient)
 	}
 
 	// Add the magnet url.
-	if t, err = client.AddMagnet(flag.Arg(0)); err != nil {
-		log.Fatal(err)
+	magent := flag.Arg(0)
+	if t, err = client.AddMagnet(magent); err != nil {
+		log.Fatalf("Error adding magnet \"%s\": %s\n", magent, err)
 		os.Exit(exitErrorAddingTorrent)
 	}
 
