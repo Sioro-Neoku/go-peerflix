@@ -2,9 +2,13 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/anacrolix/torrent"
@@ -13,6 +17,8 @@ import (
 
 const clearScreen = "\033[H\033[2J"
 
+var isHTTP = regexp.MustCompile(`^https?:\/\/`)
+
 // ClientError formats errors coming from the client.
 type ClientError struct {
 	Type   string
@@ -20,7 +26,7 @@ type ClientError struct {
 }
 
 func (clientError ClientError) Error() string {
-	return fmt.Sprintf("Error %s: %s", clientError.Type, clientError.Origin)
+	return fmt.Sprintf("Error %s: %s\n", clientError.Type, clientError.Origin)
 }
 
 // Client manages the torrent downloading.
@@ -31,7 +37,7 @@ type Client struct {
 }
 
 // NewClient creates a new torrent client based on a magnet url.
-func NewClient(data string) (client Client, err error) {
+func NewClient(torrentPath string) (client Client, err error) {
 	var t torrent.Torrent
 	var c *torrent.Client
 
@@ -47,9 +53,31 @@ func NewClient(data string) (client Client, err error) {
 
 	client.Client = c
 
-	// Add magnet url.
-	if t, err = c.AddMagnet(data); err != nil {
-		return client, ClientError{Type: "adding torrent", Origin: err}
+	// Add torrent.
+
+	// Add as magnet url.
+	if strings.HasPrefix(torrentPath, "magnet:") {
+		if t, err = c.AddMagnet(torrentPath); err != nil {
+			return client, ClientError{Type: "adding torrent", Origin: err}
+		}
+	} else {
+		// Otherwise add as a torrent file.
+
+		// If it's online, we try downloading the file.
+		if isHTTP.MatchString(torrentPath) {
+			if torrentPath, err = downloadFile(torrentPath); err != nil {
+				return client, ClientError{Type: "downloading torrent file", Origin: err}
+			}
+		}
+
+		// Check if the file exists.
+		if _, err = os.Stat(torrentPath); err != nil {
+			return client, ClientError{Type: "file not found", Origin: err}
+		}
+
+		if t, err = c.AddTorrentFromFile(torrentPath); err != nil {
+			return client, ClientError{Type: "adding torrent to the client", Origin: err}
+		}
 	}
 
 	client.Torrent = t
@@ -126,4 +154,32 @@ func (c Client) GetFile(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+c.Torrent.Name()+"\"")
 	http.ServeContent(w, r, target.DisplayPath(), time.Now(), entry)
+}
+
+func downloadFile(URL string) (fileName string, err error) {
+	var file *os.File
+	if file, err = ioutil.TempFile(os.TempDir(), "torrent-imageviewer"); err != nil {
+		return
+	}
+
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("Error closing torrent file: %s", err)
+		}
+	}()
+
+	response, err := http.Get(URL)
+	if err != nil {
+		return
+	}
+
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			log.Printf("Error closing torrent file: %s", err)
+		}
+	}()
+
+	_, err = io.Copy(file, response.Body)
+
+	return file.Name(), err
 }

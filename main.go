@@ -32,7 +32,7 @@ func main() {
 	// Start up the torrent client.
 	client, err := NewClient(flag.Arg(0))
 	if err != nil {
-		log.Fatalf("Error adding magnet \"%s\": %s\n", flag.Arg(0), err)
+		log.Fatalf(err.Error())
 		os.Exit(exitErrorInClient)
 	}
 
