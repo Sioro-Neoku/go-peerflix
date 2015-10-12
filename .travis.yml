@@ -1,0 +1,9 @@
+sudo: false
+language: go
+go: 1.5
+install:
+  - go get
+  - go get github.com/alecthomas/gometalinter
+  - gometalinter --install --update
+script:
+  - gometalinter ./... --deadline=30s

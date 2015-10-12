@@ -77,7 +77,9 @@ func main() {
 			log.Printf("Playing in vlc")
 
 			// @todo decide command to run based on os.
-			exec.Command("open", "-a", "vlc", "http://localhost:8080").Start()
+			if err := exec.Command("open", "-a", "vlc", "http://localhost:8080").Start(); err != nil {
+				log.Printf("Error opening vlc: %s\n", err)
+			}
 		}()
 	}
 
@@ -142,7 +144,11 @@ func getFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defer entry.Close()
+	defer func() {
+		if err := entry.Close(); err != nil {
+			log.Printf("Error closing file reader: %s\n", err)
+		}
+	}()
 
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+t.Name()+"\"")
 	http.ServeContent(w, r, target.DisplayPath(), time.Now(), entry)
