@@ -2,76 +2,50 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"time"
-
-	"github.com/anacrolix/torrent"
-	"github.com/dustin/go-humanize"
 )
 
-var t torrent.Torrent
 var seed *bool
 var vlc *bool
-var progress int64
-
-const clearScreen = "\033[H\033[2J"
 
 // Exit statuses.
 const (
 	_ = iota
 	exitNoTorrentProvided
-	exitErrorCreatingClient
-	exitErrorAddingTorrent
+	exitErrorInClient
 )
 
 func main() {
 	// Set up flags.
 	seed = flag.Bool("seed", true, "Seed after finished downloading")
 	vlc = flag.Bool("vlc", false, "Open vlc to play the file")
-
 	flag.Parse()
 	if len(flag.Args()) == 0 {
-		usage()
+		flag.Usage()
 		os.Exit(exitNoTorrentProvided)
 	}
 
 	// Start up the torrent client.
-	client, err := torrent.NewClient(&torrent.Config{
-		DataDir:  os.TempDir(),
-		NoUpload: !(*seed),
-	})
-
+	client, err := NewClient(flag.Arg(0))
 	if err != nil {
-		log.Fatalf("Error creating torrent client: %s\n", err)
-		os.Exit(exitErrorCreatingClient)
+		log.Fatalf(err.Error())
+		os.Exit(exitErrorInClient)
 	}
-
-	// Add the magnet url.
-	magent := flag.Arg(0)
-	if t, err = client.AddMagnet(magent); err != nil {
-		log.Fatalf("Error adding magnet \"%s\": %s\n", magent, err)
-		os.Exit(exitErrorAddingTorrent)
-	}
-
-	// Start downloading files.
-	go func() {
-		<-t.GotInfo()
-		t.DownloadAll()
-	}()
 
 	// Http handler.
 	go func() {
-		http.HandleFunc("/", getFile)
+		http.HandleFunc("/", client.GetFile)
 		log.Fatal(http.ListenAndServe(":8080", nil))
 	}()
 
+	// Open vlc to play.
 	if *vlc {
 		go func() {
-			for !readyForPlayback() {
+			for !client.ReadyForPlayback() {
 				time.Sleep(time.Second)
 			}
 			log.Printf("Playing in vlc")
@@ -85,71 +59,7 @@ func main() {
 
 	// Cli render loop.
 	for true {
-		render()
+		client.Render()
 		time.Sleep(time.Second)
 	}
-}
-
-func readyForPlayback() bool {
-	percentage := float64(t.BytesCompleted()) / float64(t.Length())
-
-	return percentage > 0.05
-}
-
-func render() {
-	var currentProgress = t.BytesCompleted()
-	speed := humanize.Bytes(uint64(currentProgress-progress)) + "/s"
-	progress = currentProgress
-
-	percentage := float64(t.BytesCompleted()) / float64(t.Length()) * 100
-	complete := humanize.Bytes(uint64(t.BytesCompleted()))
-	size := humanize.Bytes(uint64(t.Length()))
-	connections := len(t.Conns)
-
-	print(clearScreen)
-	fmt.Println(t.Name())
-	fmt.Println("=============================================================")
-	if t.BytesCompleted() > 0 {
-		fmt.Printf("Progress: \t%s / %s  %.2f%%\n", complete, size, percentage)
-	}
-	if t.BytesCompleted() < t.Length() {
-		fmt.Printf("Download speed: %s\n", speed)
-	}
-	fmt.Printf("Connections: \t%d\n", connections)
-}
-
-func usage() {
-	flag.Usage()
-}
-
-func getLargestFile() torrent.File {
-	var target torrent.File
-	var maxSize int64
-
-	for _, file := range t.Files() {
-		if maxSize < file.Length() {
-			maxSize = file.Length()
-			target = file
-		}
-	}
-
-	return target
-}
-
-func getFile(w http.ResponseWriter, r *http.Request) {
-	target := getLargestFile()
-	entry, err := NewFileReader(target)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	defer func() {
-		if err := entry.Close(); err != nil {
-			log.Printf("Error closing file reader: %s\n", err)
-		}
-	}()
-
-	w.Header().Set("Content-Disposition", "attachment; filename=\""+t.Name()+"\"")
-	http.ServeContent(w, r, target.DisplayPath(), time.Now(), entry)
 }
