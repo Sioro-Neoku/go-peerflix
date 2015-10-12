@@ -36,7 +36,8 @@ type Client struct {
 	Progress int64
 }
 
-// NewClient creates a new torrent client based on a magnet url.
+// NewClient creates a new torrent client based on a magnet or a torrent file.
+// If the torrent file is on http, we try downloading it.
 func NewClient(torrentPath string) (client Client, err error) {
 	var t torrent.Torrent
 	var c *torrent.Client
