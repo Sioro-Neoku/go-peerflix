@@ -6,4 +6,4 @@ install:
   - go get github.com/alecthomas/gometalinter
   - gometalinter --install --update
 script:
-  - gometalinter ./...
+  - gometalinter ./... --deadline=30s
