@@ -2,6 +2,8 @@
 
 A Golang port of [peerflix](https://github.com/mafintosh/peerflix).
 
+<img src="https://api.travis-ci.org/Sioro-Neoku/go-peerflix.svg?branch=master" />
+
 ## Installation
 ```sh
 go get github.com/Sioro-Neoku/go-peerflix
