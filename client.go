@@ -11,43 +11,64 @@ import (
 	"github.com/dustin/go-humanize"
 )
 
-type Client struct {
-	Client  *torrent.Client
-	Torrent torrent.Torrent
+const clearScreen = "\033[H\033[2J"
+
+// ClientError formats errors coming from the client.
+type ClientError struct {
+	Type   string
+	Origin error
 }
 
+func (clientError ClientError) Error() string {
+	return fmt.Sprintf("Error %s: %s", clientError.Type, clientError.Origin)
+}
+
+// Client manages the torrent downloading.
+type Client struct {
+	Client   *torrent.Client
+	Torrent  torrent.Torrent
+	Progress int64
+}
+
+// NewClient creates a new torrent client based on a magnet url.
 func NewClient(data string) (client Client, err error) {
 	var t torrent.Torrent
+	var c *torrent.Client
 
 	// Create client.
-	c, err := torrent.NewClient(&torrent.Config{
+	c, err = torrent.NewClient(&torrent.Config{
 		DataDir:  os.TempDir(),
 		NoUpload: !(*seed),
 	})
 
+	if err != nil {
+		return client, ClientError{Type: "creating torrent client", Origin: err}
+	}
+
 	client.Client = c
 
 	// Add magnet url.
-	t, err = c.AddMagnet(data)
+	if t, err = c.AddMagnet(data); err != nil {
+		return client, ClientError{Type: "adding torrent", Origin: err}
+	}
 
 	client.Torrent = t
 
-	if err == nil {
-		go func() {
-			<-t.GotInfo()
-			t.DownloadAll()
-		}()
-	}
+	go func() {
+		<-t.GotInfo()
+		t.DownloadAll()
+	}()
 
 	return
 }
 
-func (c Client) Render() {
+// Render outputs the command line interface for the client.
+func (c *Client) Render() {
 	t := c.Torrent
 
 	var currentProgress = c.Torrent.BytesCompleted()
-	speed := humanize.Bytes(uint64(currentProgress-progress)) + "/s"
-	progress = currentProgress
+	speed := humanize.Bytes(uint64(currentProgress-c.Progress)) + "/s"
+	c.Progress = currentProgress
 
 	percentage := float64(t.BytesCompleted()) / float64(t.Length()) * 100
 	complete := humanize.Bytes(uint64(t.BytesCompleted()))
@@ -80,12 +101,15 @@ func (c Client) getLargestFile() torrent.File {
 	return target
 }
 
+// ReadyForPlayback checks if the torrent is ready for playback or not.
+// we wait until 5% of the torrent to start playing.
 func (c Client) ReadyForPlayback() bool {
 	percentage := float64(c.Torrent.BytesCompleted()) / float64(c.Torrent.Length())
 
 	return percentage > 0.05
 }
 
+// GetFile is an http handler to serve the biggest file managed by the client.
 func (c Client) GetFile(w http.ResponseWriter, r *http.Request) {
 	target := c.getLargestFile()
 	entry, err := NewFileReader(c, target)

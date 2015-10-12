@@ -11,16 +11,12 @@ import (
 
 var seed *bool
 var vlc *bool
-var progress int64
-
-const clearScreen = "\033[H\033[2J"
 
 // Exit statuses.
 const (
 	_ = iota
 	exitNoTorrentProvided
-	exitErrorCreatingClient
-	exitErrorAddingTorrent
+	exitErrorInClient
 )
 
 func main() {
@@ -37,7 +33,7 @@ func main() {
 	client, err := NewClient(flag.Arg(0))
 	if err != nil {
 		log.Fatalf("Error adding magnet \"%s\": %s\n", flag.Arg(0), err)
-		os.Exit(exitErrorAddingTorrent)
+		os.Exit(exitErrorInClient)
 	}
 
 	// Http handler.
