@@ -22,10 +22,10 @@ const clearScreen = "\033[H\033[2J"
 
 // Exit statuses.
 const (
-	_                       = iota
-	exitNoTorrentProvided   = iota
-	exitErrorCreatingClient = iota
-	exitErrorAddingTorrent  = iota
+	_ = iota
+	exitNoTorrentProvided
+	exitErrorCreatingClient
+	exitErrorAddingTorrent
 )
 
 func main() {
