@@ -144,7 +144,11 @@ func getFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defer entry.Close()
+	defer func() {
+		if err := entry.Close(); err != nil {
+			log.Printf("Error closing file reader: %s\n", err)
+		}
+	}()
 
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+t.Name()+"\"")
 	http.ServeContent(w, r, target.DisplayPath(), time.Now(), entry)
