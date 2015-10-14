@@ -12,12 +12,12 @@ go get github.com/Sioro-Neoku/go-peerflix
 ## Usage
 Access the stream on [http://localhost:8080/](http://localhost:8080/)
 ```sh
-go-peerflix [magnet url]
+go-peerflix [magnet url|torrent path|torrent url]
 ```
 
 To start playing in VLC (OsX only):
 ```sh
-go-peerflix -vlc [magnet url]
+go-peerflix -vlc [magnet url|torrent path|torrent url]
 ```
 
 ## License
