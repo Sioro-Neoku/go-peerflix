@@ -95,25 +95,23 @@ func NewClient(torrentPath string) (client Client, err error) {
 func (c *Client) Render() {
 	t := c.Torrent
 
-	var currentProgress = c.Torrent.BytesCompleted()
+	var currentProgress = t.BytesCompleted()
 	speed := humanize.Bytes(uint64(currentProgress-c.Progress)) + "/s"
 	c.Progress = currentProgress
 
-	percentage := float64(t.BytesCompleted()) / float64(t.Length()) * 100
-	complete := humanize.Bytes(uint64(t.BytesCompleted()))
+	complete := humanize.Bytes(uint64(currentProgress))
 	size := humanize.Bytes(uint64(t.Length()))
-	connections := len(t.Conns)
 
 	print(clearScreen)
 	fmt.Println(t.Name())
 	fmt.Println("=============================================================")
-	if t.BytesCompleted() > 0 {
-		fmt.Printf("Progress: \t%s / %s  %.2f%%\n", complete, size, percentage)
+	if currentProgress > 0 {
+		fmt.Printf("Progress: \t%s / %s  %.2f%%\n", complete, size, c.percentage())
 	}
-	if t.BytesCompleted() < t.Length() {
+	if currentProgress < t.Length() {
 		fmt.Printf("Download speed: %s\n", speed)
 	}
-	fmt.Printf("Connections: \t%d\n", connections)
+	fmt.Printf("Connections: \t%d\n", len(t.Conns))
 }
 
 func (c Client) getLargestFile() torrent.File {
@@ -133,9 +131,7 @@ func (c Client) getLargestFile() torrent.File {
 // ReadyForPlayback checks if the torrent is ready for playback or not.
 // we wait until 5% of the torrent to start playing.
 func (c Client) ReadyForPlayback() bool {
-	percentage := float64(c.Torrent.BytesCompleted()) / float64(c.Torrent.Length())
-
-	return percentage > 0.05
+	return c.percentage() > 5
 }
 
 // GetFile is an http handler to serve the biggest file managed by the client.
@@ -155,6 +151,10 @@ func (c Client) GetFile(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+c.Torrent.Name()+"\"")
 	http.ServeContent(w, r, target.DisplayPath(), time.Now(), entry)
+}
+
+func (c Client) percentage() float64 {
+	return float64(c.Torrent.BytesCompleted()) / float64(c.Torrent.Length()) * 100
 }
 
 func downloadFile(URL string) (fileName string, err error) {
