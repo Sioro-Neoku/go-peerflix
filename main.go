@@ -58,7 +58,7 @@ func main() {
 	}
 
 	// Cli render loop.
-	for true {
+	for {
 		client.Render()
 		time.Sleep(time.Second)
 	}
