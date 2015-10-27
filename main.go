@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"time"
 )
 
@@ -20,9 +21,12 @@ const (
 )
 
 func main() {
+	var port int
+
 	// Set up flags.
-	seed = flag.Bool("seed", true, "Seed after finished downloading")
 	vlc = flag.Bool("vlc", false, "Open vlc to play the file")
+	flag.IntVar(&port, "port", 8080, "Port to stream the video on")
+	seed = flag.Bool("seed", true, "Seed after finished downloading")
 	flag.Parse()
 	if len(flag.Args()) == 0 {
 		flag.Usage()
@@ -30,7 +34,7 @@ func main() {
 	}
 
 	// Start up the torrent client.
-	client, err := NewClient(flag.Arg(0))
+	client, err := NewClient(flag.Arg(0), port)
 	if err != nil {
 		log.Fatalf(err.Error())
 		os.Exit(exitErrorInClient)
@@ -39,7 +43,7 @@ func main() {
 	// Http handler.
 	go func() {
 		http.HandleFunc("/", client.GetFile)
-		log.Fatal(http.ListenAndServe(":8080", nil))
+		log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), nil))
 	}()
 
 	// Open vlc to play.
@@ -51,7 +55,7 @@ func main() {
 			log.Printf("Playing in vlc")
 
 			// @todo decide command to run based on os.
-			if err := exec.Command("open", "-a", "vlc", "http://localhost:8080").Start(); err != nil {
+			if err := exec.Command("open", "-a", "vlc", "http://localhost:"+strconv.Itoa(port)).Start(); err != nil {
 				log.Printf("Error opening vlc: %s\n", err)
 			}
 		}()
