@@ -4,6 +4,9 @@ A Golang port of [peerflix](https://github.com/mafintosh/peerflix).
 
 <img src="https://api.travis-ci.org/Sioro-Neoku/go-peerflix.svg?branch=master" />
 
+Start watching the movie while your torrent is still downloading!
+![Working of go-peerflix](./images/demo.gif)
+
 ## Installation
 ```sh
 go get github.com/Sioro-Neoku/go-peerflix
