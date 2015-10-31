@@ -72,7 +72,7 @@ func main() {
 		syscall.SIGTERM,
 		syscall.SIGQUIT)
 	go func(interruptChannel chan os.Signal) {
-		for _ = range interruptChannel {
+		for range interruptChannel {
 			log.Println("Exiting...")
 			client.Close()
 			os.Exit(0)
