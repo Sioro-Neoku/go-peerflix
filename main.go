@@ -12,9 +12,6 @@ import (
 	"time"
 )
 
-var seed *bool
-var vlc *bool
-
 // Exit statuses.
 const (
 	_ = iota
@@ -23,9 +20,11 @@ const (
 )
 
 func main() {
+	// Parse flags.
 	var port int
+	var vlc *bool
+	var seed *bool
 
-	// Set up flags.
 	vlc = flag.Bool("vlc", false, "Open vlc to play the file")
 	flag.IntVar(&port, "port", 8080, "Port to stream the video on")
 	seed = flag.Bool("seed", true, "Seed after finished downloading")
@@ -36,7 +35,7 @@ func main() {
 	}
 
 	// Start up the torrent client.
-	client, err := NewClient(flag.Arg(0), port)
+	client, err := NewClient(flag.Arg(0), port, *seed)
 	if err != nil {
 		log.Fatalf(err.Error())
 		os.Exit(exitErrorInClient)
