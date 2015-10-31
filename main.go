@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 )
 
@@ -60,6 +62,22 @@ func main() {
 			}
 		}()
 	}
+
+	// Handle exit signals.
+	interruptChannel := make(chan os.Signal, 1)
+	signal.Notify(interruptChannel,
+		os.Interrupt,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
+	go func(interruptChannel chan os.Signal) {
+		for _ = range interruptChannel {
+			log.Println("Exiting...")
+			client.Close()
+			os.Exit(0)
+		}
+	}(interruptChannel)
 
 	// Cli render loop.
 	for {

@@ -94,6 +94,12 @@ func NewClient(torrentPath string, port int) (client Client, err error) {
 	return
 }
 
+// Close cleans up the connections.
+func (c *Client) Close() {
+	c.Torrent.Drop()
+	c.Client.Close()
+}
+
 // Render outputs the command line interface for the client.
 func (c *Client) Render() {
 	t := c.Torrent
