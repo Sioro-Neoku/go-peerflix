@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"syscall"
 	"time"
@@ -53,12 +54,7 @@ func main() {
 			for !client.ReadyForPlayback() {
 				time.Sleep(time.Second)
 			}
-			log.Printf("Playing in vlc")
-
-			// @todo decide command to run based on os.
-			if err := exec.Command("open", "-a", "vlc", "http://localhost:"+strconv.Itoa(port)).Start(); err != nil {
-				log.Printf("Error opening vlc: %s\n", err)
-			}
+			playInVlc(port)
 		}()
 	}
 
@@ -82,5 +78,19 @@ func main() {
 	for {
 		client.Render()
 		time.Sleep(time.Second)
+	}
+}
+
+func playInVlc(port int) {
+	log.Printf("Playing in vlc")
+
+	command := []string{"vlc"}
+	if runtime.GOOS == "darwin" {
+		command = []string{"open", "-a", "vlc"}
+	}
+	command = append(command, "http://localhost:"+strconv.Itoa(port))
+
+	if err := exec.Command(command[0], command[1:]...).Start(); err != nil {
+		log.Printf("Error opening vlc: %s\n", err)
 	}
 }

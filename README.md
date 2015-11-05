@@ -18,7 +18,7 @@ Access the stream on [http://localhost:8080/](http://localhost:8080/)
 go-peerflix [magnet url|torrent path|torrent url]
 ```
 
-To start playing in VLC (OsX only):
+To start playing in VLC:
 ```sh
 go-peerflix -vlc [magnet url|torrent path|torrent url]
 ```
