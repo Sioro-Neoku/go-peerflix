@@ -90,6 +90,11 @@ func NewClient(torrentPath string, port int, seed bool) (client Client, err erro
 	go func() {
 		<-t.GotInfo()
 		t.DownloadAll()
+
+		// Prioritize first 5% of the file.
+		for i := 0; i < len(t.Pieces)/100*5; i++ {
+			t.Pieces[i].Priority = torrent.PiecePriorityReadahead
+		}
 	}()
 
 	return
@@ -126,9 +131,10 @@ func (c *Client) Render() {
 		fmt.Printf("Download speed: %s\n", speed)
 	}
 	fmt.Printf("Connections: \t%d\n", len(t.Conns))
+	//fmt.Printf("%s\n", c.RenderPieces())
 }
 
-func (c Client) getLargestFile() torrent.File {
+func (c Client) getLargestFile() *torrent.File {
 	var target torrent.File
 	var maxSize int64
 
@@ -139,8 +145,32 @@ func (c Client) getLargestFile() torrent.File {
 		}
 	}
 
-	return target
+	return &target
 }
+
+/*
+func (c Client) RenderPieces() (output string) {
+	for i := range c.Torrent.Pieces {
+		piece := c.Torrent.Pieces[i]
+
+		if piece.PublicPieceState.Priority == torrent.PiecePriorityReadahead {
+			output += "!"
+		}
+
+		if piece.PublicPieceState.Partial {
+			output += "P"
+		} else if piece.PublicPieceState.Checking {
+			output += "c"
+		} else if piece.PublicPieceState.Complete {
+			output += "d"
+		} else {
+			output += "_"
+		}
+	}
+
+	return
+}
+*/
 
 // ReadyForPlayback checks if the torrent is ready for playback or not.
 // we wait until 5% of the torrent to start playing.
