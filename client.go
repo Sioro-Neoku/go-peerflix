@@ -1,6 +1,7 @@
 package main
 
 import (
+	"compress/gzip"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,10 +13,13 @@ import (
 	"time"
 
 	"github.com/anacrolix/torrent"
+	"github.com/anacrolix/torrent/iplist"
 	"github.com/dustin/go-humanize"
 )
 
 const clearScreen = "\033[H\033[2J"
+
+const torrentBlockListURL = "http://john.bitsurge.net/public/biglist.p2p.gz"
 
 var isHTTP = regexp.MustCompile(`^https?:\/\/`)
 
@@ -97,7 +101,68 @@ func NewClient(torrentPath string, port int, seed bool) (client Client, err erro
 		}
 	}()
 
+	go client.addBlocklist()
+
 	return
+}
+
+// Download and add the blocklist.
+func (c *Client) addBlocklist() {
+	if c.Client.IPBlockList() != nil {
+		log.Printf("Found blocklist")
+		return
+	}
+
+	var err error
+	blocklistPath := c.Client.ConfigDir() + "/blocklist"
+
+	// Download blocklist.
+	log.Printf("Downloading blocklist")
+	fileName, err := downloadFile(torrentBlockListURL)
+	if err != nil {
+		log.Printf("Error downloading blocklist: %s\n", err)
+		return
+	}
+
+	// Ungzip file.
+	in, err := os.Open(fileName)
+	if err != nil {
+		log.Printf("Error extracting blocklist: %s\n", err)
+		return
+	}
+	defer func() {
+		if err := in.Close(); err != nil {
+			log.Printf("Error closing the blocklist gzip file: %s", err)
+		}
+	}()
+	reader, err := gzip.NewReader(in)
+
+	// Write to {configdir}/blocklist
+	out, err := os.Create(blocklistPath)
+	if err != nil {
+		log.Printf("Error writing blocklist: %s\n", err)
+		return
+	}
+	defer func() {
+		if err := out.Close(); err != nil {
+			log.Printf("Error writing the blocklist file: %s", err)
+		}
+	}()
+	_, err = io.Copy(out, reader)
+	if err != nil {
+		log.Printf("Error writing the blocklist file: %s", err)
+		return
+	}
+
+	// Add to the blocklist.
+	blocklistReader, err := os.Open(blocklistPath)
+	blocklist, err := iplist.NewFromReader(blocklistReader)
+	if err != nil {
+		log.Printf("Error reading blocklist: %s", err)
+		return
+	}
+	log.Printf("Setting blocklist.\nFound %d ranges\n", blocklist.NumRanges())
+	c.Client.SetIPBlockList(blocklist)
 }
 
 // Close cleans up the connections.
