@@ -238,7 +238,7 @@ func (c Client) RenderPieces() (output string) {
 */
 
 // ReadyForPlayback checks if the torrent is ready for playback or not.
-// we wait until 5% of the torrent to start playing.
+// We wait until 5% of the torrent to start playing.
 func (c Client) ReadyForPlayback() bool {
 	return c.percentage() > 5
 }
@@ -246,7 +246,7 @@ func (c Client) ReadyForPlayback() bool {
 // GetFile is an http handler to serve the biggest file managed by the client.
 func (c Client) GetFile(w http.ResponseWriter, r *http.Request) {
 	target := c.getLargestFile()
-	entry, err := NewFileReader(c, target)
+	entry, err := NewFileReader(target)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

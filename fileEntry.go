@@ -15,7 +15,7 @@ type SeekableContent interface {
 
 // FileEntry helps reading a torrent file.
 type FileEntry struct {
-	File *torrent.File
+	*torrent.File
 	*torrent.Reader
 }
 
@@ -25,12 +25,12 @@ func (f FileEntry) Seek(offset int64, whence int) (int64, error) {
 }
 
 // NewFileReader sets up a torrent file for streaming reading.
-func NewFileReader(c Client, f *torrent.File) (SeekableContent, error) {
-	// We read ahead 1% of the file continuously.
-	var readahead = f.Length() / 100
+func NewFileReader(f *torrent.File) (SeekableContent, error) {
+	torrent := f.Torrent()
+	reader := torrent.NewReader()
 
-	reader := c.Torrent.NewReader()
-	reader.SetReadahead(readahead)
+	// We read ahead 1% of the file continuously.
+	reader.SetReadahead(f.Length() / 100)
 	reader.SetResponsive()
 	_, err := reader.Seek(f.Offset(), os.SEEK_SET)
 
