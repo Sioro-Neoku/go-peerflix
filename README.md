@@ -8,6 +8,11 @@ Start watching the movie while your torrent is still downloading!
 ![Working of go-peerflix](./images/demo.gif)
 
 ## Installation
+
+Download the binary from the [releases](https://github.com/Sioro-Neoku/go-peerflix/releases) page.
+
+Or in case you have golang configured you may want to install through the command:
+
 ```sh
 go get github.com/Sioro-Neoku/go-peerflix
 ```
