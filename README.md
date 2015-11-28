@@ -23,5 +23,21 @@ To start playing in VLC:
 go-peerflix -vlc [magnet url|torrent path|torrent url]
 ```
 
+## Build
+
+Building only for the current platform:
+
+```bash
+go build .
+```
+
+
+Building for platforms: Linux, Darwin and Windows
+
+```bash
+goxc
+```
+
+
 ## License
 [MIT](https://raw.githubusercontent.com/Sioro-Neoku/go-peerflix/master/LICENSE)
