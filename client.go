@@ -96,9 +96,7 @@ func NewClient(torrentPath string, port int, seed bool) (client Client, err erro
 		t.DownloadAll()
 
 		// Prioritize first 5% of the file.
-		for i := 0; i < len(t.Pieces)/100*5; i++ {
-			t.Pieces[i].Priority = torrent.PiecePriorityReadahead
-		}
+		client.getLargestFile().PrioritizeRegion(0, int64(t.NumPieces()/100*5))
 	}()
 
 	go client.addBlocklist()
@@ -175,15 +173,19 @@ func (c *Client) Close() {
 func (c *Client) Render() {
 	t := c.Torrent
 
+	if t.Info() == nil {
+		return
+	}
+
 	var currentProgress = t.BytesCompleted()
 	speed := humanize.Bytes(uint64(currentProgress-c.Progress)) + "/s"
 	c.Progress = currentProgress
 
 	complete := humanize.Bytes(uint64(currentProgress))
-	size := humanize.Bytes(uint64(t.Length()))
+	size := humanize.Bytes(uint64(t.Info().TotalLength()))
 
 	print(clearScreen)
-	fmt.Println(t.Name())
+	fmt.Println(t.Info().Name)
 	fmt.Println("=============================================================")
 	if c.ReadyForPlayback() {
 		fmt.Printf("Stream: \thttp://localhost:%d\n", c.Port)
@@ -192,10 +194,10 @@ func (c *Client) Render() {
 	if currentProgress > 0 {
 		fmt.Printf("Progress: \t%s / %s  %.2f%%\n", complete, size, c.percentage())
 	}
-	if currentProgress < t.Length() {
+	if currentProgress < t.Info().TotalLength() {
 		fmt.Printf("Download speed: %s\n", speed)
 	}
-	fmt.Printf("Connections: \t%d\n", len(t.Conns))
+	fmt.Printf("Connections: \t%d\n", len(t.Peers()))
 	//fmt.Printf("%s\n", c.RenderPieces())
 }
 
@@ -215,18 +217,19 @@ func (c Client) getLargestFile() *torrent.File {
 
 /*
 func (c Client) RenderPieces() (output string) {
-	for i := range c.Torrent.Pieces {
-		piece := c.Torrent.Pieces[i]
+	pieces := c.Torrent.PieceStateRuns()
+	for i := range pieces {
+		piece := pieces[i]
 
-		if piece.PublicPieceState.Priority == torrent.PiecePriorityReadahead {
+		if piece.Priority == torrent.PiecePriorityReadahead {
 			output += "!"
 		}
 
-		if piece.PublicPieceState.Partial {
+		if piece.Partial {
 			output += "P"
-		} else if piece.PublicPieceState.Checking {
+		} else if piece.Checking {
 			output += "c"
-		} else if piece.PublicPieceState.Complete {
+		} else if piece.Complete {
 			output += "d"
 		} else {
 			output += "_"
@@ -258,12 +261,18 @@ func (c Client) GetFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	w.Header().Set("Content-Disposition", "attachment; filename=\""+c.Torrent.Name()+"\"")
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+c.Torrent.Info().Name+"\"")
 	http.ServeContent(w, r, target.DisplayPath(), time.Now(), entry)
 }
 
 func (c Client) percentage() float64 {
-	return float64(c.Torrent.BytesCompleted()) / float64(c.Torrent.Length()) * 100
+	info := c.Torrent.Info()
+
+	if info == nil {
+		return 0
+	}
+
+	return float64(c.Torrent.BytesCompleted()) / float64(info.TotalLength()) * 100
 }
 
 func downloadFile(URL string) (fileName string, err error) {
