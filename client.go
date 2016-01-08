@@ -51,9 +51,10 @@ func NewClient(torrentPath string, port int, seed bool) (client Client, err erro
 
 	// Create client.
 	c, err = torrent.NewClient(&torrent.Config{
-		DataDir:  os.TempDir(),
-		NoUpload: !seed,
-		Seed:     seed,
+		DataDir:    os.TempDir(),
+		NoUpload:   !seed,
+		Seed:       seed,
+		DisableTCP: true,
 	})
 
 	if err != nil {
