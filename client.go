@@ -197,7 +197,7 @@ func (c *Client) Render() {
 	if currentProgress < t.Info().TotalLength() {
 		fmt.Printf("Download speed: %s\n", speed)
 	}
-	fmt.Printf("Connections: \t%d\n", len(t.Peers()))
+	fmt.Printf("Connections: \t%d\n", len(t.Peers))
 	//fmt.Printf("%s\n", c.RenderPieces())
 }
 
