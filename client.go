@@ -43,7 +43,7 @@ type Client struct {
 
 // NewClient creates a new torrent client based on a magnet or a torrent file.
 // If the torrent file is on http, we try downloading it.
-func NewClient(torrentPath string, port int, seed bool) (client Client, err error) {
+func NewClient(torrentPath string, port int, seed bool, tcp bool) (client Client, err error) {
 	var t torrent.Torrent
 	var c *torrent.Client
 
@@ -51,9 +51,10 @@ func NewClient(torrentPath string, port int, seed bool) (client Client, err erro
 
 	// Create client.
 	c, err = torrent.NewClient(&torrent.Config{
-		DataDir:  os.TempDir(),
-		NoUpload: !seed,
-		Seed:     seed,
+		DataDir:    os.TempDir(),
+		NoUpload:   !seed,
+		Seed:       seed,
+		DisableTCP: !tcp,
 	})
 
 	if err != nil {
@@ -197,7 +198,7 @@ func (c *Client) Render() {
 	if currentProgress < t.Info().TotalLength() {
 		fmt.Printf("Download speed: %s\n", speed)
 	}
-	fmt.Printf("Connections: \t%d\n", len(t.Peers()))
+	fmt.Printf("Connections: \t%d\n", len(t.Peers))
 	//fmt.Printf("%s\n", c.RenderPieces())
 }
 
