@@ -95,6 +95,9 @@ func NewClient(torrentPath string, port int, seed bool, tcp bool) (client Client
 	go func() {
 		<-t.GotInfo()
 		t.DownloadAll()
+
+		// Prioritize first 5% of the file.
+		client.getLargestFile().PrioritizeRegion(0, int64(t.NumPieces()/100*5))
 	}()
 
 	go client.addBlocklist()
