@@ -25,8 +25,10 @@ go-peerflix [magnet url|torrent path|torrent url]
 
 To start playing in VLC:
 ```sh
-go-peerflix -vlc [magnet url|torrent path|torrent url]
+go-peerflix -player vlc [magnet url|torrent path|torrent url]
 ```
+
+Currently supported players are: VLC, MPlayer and MPV
 
 ## Build
 
