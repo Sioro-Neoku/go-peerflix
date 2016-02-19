@@ -5,9 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"os/signal"
-	"runtime"
 	"strconv"
 	"syscall"
 	"time"
@@ -23,9 +21,10 @@ const (
 func main() {
 	// Parse flags.
 	var port int
-	var vlc, seed, tcp *bool
+	var seed, tcp *bool
+	var player *string
 
-	vlc = flag.Bool("vlc", false, "Open vlc to play the file")
+	player = flag.String("player", "", "Open the stream with a video player ("+joinPlayerNames()+")")
 	flag.IntVar(&port, "port", 8080, "Port to stream the video on")
 	seed = flag.Bool("seed", false, "Seed after finished downloading")
 	tcp = flag.Bool("tcp", true, "Allow connections via TCP")
@@ -48,13 +47,13 @@ func main() {
 		log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), nil))
 	}()
 
-	// Open vlc to play.
-	if *vlc {
+	// Open selected video player
+	if *player != "" {
 		go func() {
 			for !client.ReadyForPlayback() {
 				time.Sleep(time.Second)
 			}
-			playInVlc(port)
+			openPlayer(*player, port)
 		}()
 	}
 
@@ -78,19 +77,5 @@ func main() {
 	for {
 		client.Render()
 		time.Sleep(time.Second)
-	}
-}
-
-func playInVlc(port int) {
-	log.Printf("Playing in vlc")
-
-	command := []string{"vlc"}
-	if runtime.GOOS == "darwin" {
-		command = []string{"open", "-a", "vlc"}
-	}
-	command = append(command, "http://localhost:"+strconv.Itoa(port))
-
-	if err := exec.Command(command[0], command[1:]...).Start(); err != nil {
-		log.Printf("Error opening vlc: %s\n", err)
 	}
 }
