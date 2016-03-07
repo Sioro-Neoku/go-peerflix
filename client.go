@@ -45,7 +45,7 @@ type Client struct {
 
 // NewClient creates a new torrent client based on a magnet or a torrent file.
 // If the torrent file is on http, we try downloading it.
-func NewClient(torrentPath string, port int, seed bool, tcp bool, maxConnections int) (client Client, err error) {
+func NewClient(torrentPath string, port int, torrentPort int, seed bool, tcp bool, maxConnections int) (client Client, err error) {
 	var t *torrent.Torrent
 	var c *torrent.Client
 
@@ -57,6 +57,7 @@ func NewClient(torrentPath string, port int, seed bool, tcp bool, maxConnections
 		NoUpload:   !seed,
 		Seed:       seed,
 		DisableTCP: !tcp,
+		ListenAddr: fmt.Sprintf(":%d", torrentPort),
 	})
 
 	if err != nil {
