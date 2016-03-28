@@ -130,7 +130,7 @@ func (c *Client) addBlocklist() {
 		return
 	}
 	defer func() {
-		if err := in.Close(); err != nil {
+		if err = in.Close(); err != nil {
 			log.Printf("Error closing the blocklist gzip file: %s", err)
 		}
 	}()
@@ -143,7 +143,7 @@ func (c *Client) addBlocklist() {
 		return
 	}
 	defer func() {
-		if err := out.Close(); err != nil {
+		if err = out.Close(); err != nil {
 			log.Printf("Error writing the blocklist file: %s", err)
 		}
 	}()
@@ -278,12 +278,12 @@ func (c Client) percentage() float64 {
 
 func downloadFile(URL string) (fileName string, err error) {
 	var file *os.File
-	if file, err = ioutil.TempFile(os.TempDir(), "torrent-imageviewer"); err != nil {
+	if file, err = ioutil.TempFile(os.TempDir(), "go-peerflix"); err != nil {
 		return
 	}
 
 	defer func() {
-		if err := file.Close(); err != nil {
+		if err = file.Close(); err != nil {
 			log.Printf("Error closing torrent file: %s", err)
 		}
 	}()
@@ -294,7 +294,7 @@ func downloadFile(URL string) (fileName string, err error) {
 	}
 
 	defer func() {
-		if err := response.Body.Close(); err != nil {
+		if err = response.Body.Close(); err != nil {
 			log.Printf("Error closing torrent file: %s", err)
 		}
 	}()
