@@ -278,7 +278,7 @@ func (c Client) percentage() float64 {
 
 func downloadFile(URL string) (fileName string, err error) {
 	var file *os.File
-	if file, err = ioutil.TempFile(os.TempDir(), "torrent-imageviewer"); err != nil {
+	if file, err = ioutil.TempFile(os.TempDir(), "go-peerflix"); err != nil {
 		return
 	}
 
