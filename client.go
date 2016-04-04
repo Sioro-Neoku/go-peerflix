@@ -36,7 +36,7 @@ func (clientError ClientError) Error() string {
 // Client manages the torrent downloading.
 type Client struct {
 	Client   *torrent.Client
-	Torrent  torrent.Torrent
+	Torrent  *torrent.Torrent
 	Progress int64
 	Port     int
 }
@@ -44,7 +44,7 @@ type Client struct {
 // NewClient creates a new torrent client based on a magnet or a torrent file.
 // If the torrent file is on http, we try downloading it.
 func NewClient(torrentPath string, port int, seed bool, tcp bool) (client Client, err error) {
-	var t torrent.Torrent
+	var t *torrent.Torrent
 	var c *torrent.Client
 
 	client.Port = port
