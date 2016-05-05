@@ -107,15 +107,44 @@ func NewClient(torrentPath string, port int, seed bool, tcp bool) (client Client
 
 // Download and add the blocklist.
 func (c *Client) addBlocklist() {
-	if c.Client.IPBlockList() != nil {
-		log.Printf("Found blocklist")
+	var err error
+	blocklistPath := os.TempDir() + "/go-peerflix-blocklist.gz"
+
+	if _, err = os.Stat(blocklistPath); os.IsNotExist(err) {
+		err = downloadBlockList(blocklistPath)
+	}
+
+	if err != nil {
+		log.Printf("Error downloading blocklist: %s", err)
 		return
 	}
 
-	var err error
-	blocklistPath := c.Client.ConfigDir() + "/blocklist"
+	// Load blocklist.
+	blocklistReader, err := os.Open(blocklistPath)
+	if err != nil {
+		log.Printf("Error opening blocklist: %s", err)
+		return
+	}
 
-	// Download blocklist.
+	// Extract file.
+	gzipReader, err := gzip.NewReader(blocklistReader)
+	if err != nil {
+		log.Printf("Error extracting blocklist: %s", err)
+		return
+	}
+
+	// Read as iplist.
+	blocklist, err := iplist.NewFromReader(gzipReader)
+	if err != nil {
+		log.Printf("Error reading blocklist: %s", err)
+		return
+	}
+
+	log.Printf("Setting blocklist.\nFound %d ranges\n", blocklist.NumRanges())
+	c.Client.SetIPBlockList(blocklist)
+}
+
+func downloadBlockList(blocklistPath string) (err error) {
 	log.Printf("Downloading blocklist")
 	fileName, err := downloadFile(torrentBlockListURL)
 	if err != nil {
@@ -134,9 +163,8 @@ func (c *Client) addBlocklist() {
 			log.Printf("Error closing the blocklist gzip file: %s", err)
 		}
 	}()
-	reader, err := gzip.NewReader(in)
 
-	// Write to {configdir}/blocklist
+	// Write to file.
 	out, err := os.Create(blocklistPath)
 	if err != nil {
 		log.Printf("Error writing blocklist: %s\n", err)
@@ -144,24 +172,17 @@ func (c *Client) addBlocklist() {
 	}
 	defer func() {
 		if err = out.Close(); err != nil {
-			log.Printf("Error writing the blocklist file: %s", err)
+			log.Printf("Error closing the blocklist file: %s", err)
 		}
 	}()
-	_, err = io.Copy(out, reader)
+
+	_, err = io.Copy(out, in)
 	if err != nil {
 		log.Printf("Error writing the blocklist file: %s", err)
 		return
 	}
 
-	// Add to the blocklist.
-	blocklistReader, err := os.Open(blocklistPath)
-	blocklist, err := iplist.NewFromReader(blocklistReader)
-	if err != nil {
-		log.Printf("Error reading blocklist: %s", err)
-		return
-	}
-	log.Printf("Setting blocklist.\nFound %d ranges\n", blocklist.NumRanges())
-	c.Client.SetIPBlockList(blocklist)
+	return
 }
 
 // Close cleans up the connections.
