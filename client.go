@@ -208,7 +208,7 @@ func (c *Client) Render() {
 
 	print(clearScreen)
 	fmt.Println(t.Info().Name)
-	fmt.Println("=============================================================")
+	fmt.Println(strings.Repeat("=", len(t.Info().Name)))
 	if c.ReadyForPlayback() {
 		fmt.Printf("Stream: \thttp://localhost:%d\n", c.Port)
 	}
