@@ -23,6 +23,11 @@ Access the stream on [http://localhost:8080/](http://localhost:8080/)
 go-peerflix [magnet url|torrent path|torrent url]
 ```
 
+To use a custom port, pass the -port flag
+```sh
+go-peerflix -port 9000 [magent url|torrent path|torrent url]
+```
+
 To start playing in VLC:
 ```sh
 go-peerflix -player vlc [magnet url|torrent path|torrent url]
