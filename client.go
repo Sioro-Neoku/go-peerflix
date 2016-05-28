@@ -304,8 +304,8 @@ func downloadFile(URL string) (fileName string, err error) {
 	}
 
 	defer func() {
-		if err = file.Close(); err != nil {
-			log.Printf("Error closing torrent file: %s", err)
+		if ferr := file.Close(); ferr != nil {
+			log.Printf("Error closing torrent file: %s", ferr)
 		}
 	}()
 
@@ -315,8 +315,8 @@ func downloadFile(URL string) (fileName string, err error) {
 	}
 
 	defer func() {
-		if err = response.Body.Close(); err != nil {
-			log.Printf("Error closing torrent file: %s", err)
+		if ferr := response.Body.Close(); ferr != nil {
+			log.Printf("Error closing torrent file: %s", ferr)
 		}
 	}()
 
