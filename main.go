@@ -23,10 +23,12 @@ func main() {
 	var port int
 	var seed, tcp *bool
 	var player *string
+	var maxConnections int
 
 	player = flag.String("player", "", "Open the stream with a video player ("+joinPlayerNames()+")")
 	flag.IntVar(&port, "port", 8080, "Port to stream the video on")
 	seed = flag.Bool("seed", false, "Seed after finished downloading")
+	flag.IntVar(&maxConnections, "conn", 200, "Maximum number of connections")
 	tcp = flag.Bool("tcp", true, "Allow connections via TCP")
 	flag.Parse()
 	if len(flag.Args()) == 0 {
@@ -35,7 +37,7 @@ func main() {
 	}
 
 	// Start up the torrent client.
-	client, err := NewClient(flag.Arg(0), port, *seed, *tcp)
+	client, err := NewClient(flag.Arg(0), port, *seed, *tcp, maxConnections)
 	if err != nil {
 		log.Fatalf(err.Error())
 		os.Exit(exitErrorInClient)
