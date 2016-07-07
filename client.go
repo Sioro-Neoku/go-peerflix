@@ -83,11 +83,6 @@ func NewClient(torrentPath string, port int, seed bool, tcp bool, maxConnections
 			}
 		}
 
-		// Check if the file exists.
-		if _, err = os.Stat(torrentPath); err != nil {
-			return client, ClientError{Type: "file not found", Origin: err}
-		}
-
 		if t, err = c.AddTorrentFromFile(torrentPath); err != nil {
 			return client, ClientError{Type: "adding torrent to the client", Origin: err}
 		}
