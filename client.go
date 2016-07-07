@@ -215,17 +215,15 @@ func (c *Client) Render() {
 	if c.ReadyForPlayback() {
 		fmt.Printf("Stream: \thttp://localhost:%d\n", c.Port)
 	}
-
 	if currentProgress > 0 {
 		fmt.Printf("Progress: \t%s / %s  %.2f%%\n", complete, size, c.percentage())
 	}
 	if currentProgress < t.Info().TotalLength() {
 		fmt.Printf("Download speed: %s\n", downloadSpeed)
-		if c.Seed {
-			fmt.Printf("Upload speed: \t%s\n", uploadSpeed)
-		}
 	}
-
+	if c.Seed {
+		fmt.Printf("Upload speed: \t%s\n", uploadSpeed)
+	}
 }
 
 func (c Client) getLargestFile() *torrent.File {
