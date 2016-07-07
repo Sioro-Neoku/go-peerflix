@@ -38,7 +38,9 @@ type Client struct {
 	Client   *torrent.Client
 	Torrent  *torrent.Torrent
 	Progress int64
+	Uploaded int64
 	Port     int
+	Seed     bool
 }
 
 // NewClient creates a new torrent client based on a magnet or a torrent file.
@@ -62,6 +64,7 @@ func NewClient(torrentPath string, port int, seed bool, tcp bool) (client Client
 	}
 
 	client.Client = c
+	client.Seed = seed
 
 	// Add torrent.
 
@@ -199,12 +202,16 @@ func (c *Client) Render() {
 		return
 	}
 
-	var currentProgress = t.BytesCompleted()
-	speed := humanize.Bytes(uint64(currentProgress-c.Progress)) + "/s"
+	currentProgress := t.BytesCompleted()
+	downloadSpeed := humanize.Bytes(uint64(currentProgress-c.Progress)) + "/s"
 	c.Progress = currentProgress
 
 	complete := humanize.Bytes(uint64(currentProgress))
 	size := humanize.Bytes(uint64(t.Info().TotalLength()))
+
+	uploadProgress := t.Stats().DataBytesSent - c.Uploaded
+	uploadSpeed := humanize.Bytes(uint64(uploadProgress)) + "/s"
+	c.Uploaded = uploadProgress
 
 	print(clearScreen)
 	fmt.Println(t.Info().Name)
@@ -217,10 +224,12 @@ func (c *Client) Render() {
 		fmt.Printf("Progress: \t%s / %s  %.2f%%\n", complete, size, c.percentage())
 	}
 	if currentProgress < t.Info().TotalLength() {
-		fmt.Printf("Download speed: %s\n", speed)
+		fmt.Printf("Download speed: %s\n", downloadSpeed)
+		if c.Seed {
+			fmt.Printf("Upload speed: \t%s\n", uploadSpeed)
+		}
 	}
-	//fmt.Printf("Connections: \t%d\n", len(t.Conns))
-	//fmt.Printf("%s\n", c.RenderPieces())
+
 }
 
 func (c Client) getLargestFile() *torrent.File {
