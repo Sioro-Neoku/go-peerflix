@@ -139,7 +139,7 @@ func (c *Client) addBlocklist() {
 		return
 	}
 
-	log.Printf("Setting blocklist.\nFound %d ranges\n", blocklist.NumRanges())
+	log.Printf("Loading blocklist.\nFound %d ranges\n", blocklist.NumRanges())
 	c.Client.SetIPBlockList(blocklist)
 }
 
@@ -151,37 +151,7 @@ func downloadBlockList(blocklistPath string) (err error) {
 		return
 	}
 
-	// Ungzip file.
-	in, err := os.Open(fileName)
-	if err != nil {
-		log.Printf("Error extracting blocklist: %s\n", err)
-		return
-	}
-	defer func() {
-		if err = in.Close(); err != nil {
-			log.Printf("Error closing the blocklist gzip file: %s", err)
-		}
-	}()
-
-	// Write to file.
-	out, err := os.Create(blocklistPath)
-	if err != nil {
-		log.Printf("Error writing blocklist: %s\n", err)
-		return
-	}
-	defer func() {
-		if err = out.Close(); err != nil {
-			log.Printf("Error closing the blocklist file: %s", err)
-		}
-	}()
-
-	_, err = io.Copy(out, in)
-	if err != nil {
-		log.Printf("Error writing the blocklist file: %s", err)
-		return
-	}
-
-	return
+	return os.Rename(fileName, blocklistPath)
 }
 
 // Close cleans up the connections.
