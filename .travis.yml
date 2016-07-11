@@ -3,6 +3,7 @@ language: go
 go:
   - 1.5
   - 1.6
+  - 1.7beta2
 install:
   - go get
   - go get github.com/alecthomas/gometalinter
