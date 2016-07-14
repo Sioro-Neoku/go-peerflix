@@ -175,7 +175,7 @@ func (c *Client) Render() {
 	complete := humanize.Bytes(uint64(currentProgress))
 	size := humanize.Bytes(uint64(t.Info().TotalLength()))
 
-	uploadProgress := t.Stats().DataBytesSent - c.Uploaded
+	uploadProgress := t.Stats().DataBytesWritten - c.Uploaded
 	uploadSpeed := humanize.Bytes(uint64(uploadProgress)) + "/s"
 	c.Uploaded = uploadProgress
 
