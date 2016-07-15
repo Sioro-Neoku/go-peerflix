@@ -27,7 +27,7 @@ func main() {
 
 	player = flag.String("player", "", "Open the stream with a video player ("+joinPlayerNames()+")")
 	flag.IntVar(&port, "port", 8080, "Port to stream the video on")
-	flag.IntVar(&torrentPort, "torrent-port", 6882, "Port to listen for incoming torrent connections")
+	flag.IntVar(&torrentPort, "torrent-port", 50007, "Port to listen for incoming torrent connections")
 	seed = flag.Bool("seed", false, "Seed after finished downloading")
 	flag.IntVar(&maxConnections, "conn", 200, "Maximum number of connections")
 	tcp = flag.Bool("tcp", true, "Allow connections via TCP")
