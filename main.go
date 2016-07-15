@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"syscall"
 	"time"
+	"fmt"
 )
 
 // Exit statuses.
@@ -17,6 +18,9 @@ const (
 	exitNoTorrentProvided
 	exitErrorInClient
 )
+
+var Version = ""
+var BuildDate = ""
 
 func main() {
 	// Parse flags.
@@ -30,6 +34,7 @@ func main() {
 	seed = flag.Bool("seed", false, "Seed after finished downloading")
 	flag.IntVar(&maxConnections, "conn", 200, "Maximum number of connections")
 	tcp = flag.Bool("tcp", true, "Allow connections via TCP")
+	printVersion()
 	flag.Parse()
 	if len(flag.Args()) == 0 {
 		flag.Usage()
@@ -80,4 +85,15 @@ func main() {
 		client.Render()
 		time.Sleep(time.Second)
 	}
+}
+
+func printVersion() {
+	fmt.Print("go-peerflix")
+	if Version != "" {
+		fmt.Printf(" %s", Version)
+	}
+	if BuildDate != "" {
+		fmt.Printf(" (%s)", BuildDate)
+	}
+	fmt.Print("\n\n")
 }
