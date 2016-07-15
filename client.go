@@ -39,25 +39,45 @@ type Client struct {
 	Torrent  *torrent.Torrent
 	Progress int64
 	Uploaded int64
-	Port     int
-	Seed     bool
+	Config   ClientConfig
+}
+
+// ClientConfig specifies the behaviour of a client.
+type ClientConfig struct {
+	TorrentPath    string
+	Port           int
+	TorrentPort    int
+	Seed           bool
+	TCP            bool
+	MaxConnections int
+}
+
+// NewClientConfig creates a new default configuration.
+func NewClientConfig() ClientConfig {
+	return ClientConfig{
+		Port:           8080,
+		TorrentPort:    50007,
+		Seed:           false,
+		TCP:            true,
+		MaxConnections: 200,
+	}
 }
 
 // NewClient creates a new torrent client based on a magnet or a torrent file.
 // If the torrent file is on http, we try downloading it.
-func NewClient(torrentPath string, port int, torrentPort int, seed bool, tcp bool, maxConnections int) (client Client, err error) {
+func NewClient(cfg ClientConfig) (client Client, err error) {
 	var t *torrent.Torrent
 	var c *torrent.Client
 
-	client.Port = port
+	client.Config = cfg
 
 	// Create client.
 	c, err = torrent.NewClient(&torrent.Config{
 		DataDir:    os.TempDir(),
-		NoUpload:   !seed,
-		Seed:       seed,
-		DisableTCP: !tcp,
-		ListenAddr: fmt.Sprintf(":%d", torrentPort),
+		NoUpload:   !cfg.Seed,
+		Seed:       cfg.Seed,
+		DisableTCP: !cfg.TCP,
+		ListenAddr: fmt.Sprintf(":%d", cfg.TorrentPort),
 	})
 
 	if err != nil {
@@ -65,32 +85,31 @@ func NewClient(torrentPath string, port int, torrentPort int, seed bool, tcp boo
 	}
 
 	client.Client = c
-	client.Seed = seed
 
 	// Add torrent.
 
 	// Add as magnet url.
-	if strings.HasPrefix(torrentPath, "magnet:") {
-		if t, err = c.AddMagnet(torrentPath); err != nil {
+	if strings.HasPrefix(cfg.TorrentPath, "magnet:") {
+		if t, err = c.AddMagnet(cfg.TorrentPath); err != nil {
 			return client, ClientError{Type: "adding torrent", Origin: err}
 		}
 	} else {
 		// Otherwise add as a torrent file.
 
 		// If it's online, we try downloading the file.
-		if isHTTP.MatchString(torrentPath) {
-			if torrentPath, err = downloadFile(torrentPath); err != nil {
+		if isHTTP.MatchString(cfg.TorrentPath) {
+			if cfg.TorrentPath, err = downloadFile(cfg.TorrentPath); err != nil {
 				return client, ClientError{Type: "downloading torrent file", Origin: err}
 			}
 		}
 
-		if t, err = c.AddTorrentFromFile(torrentPath); err != nil {
+		if t, err = c.AddTorrentFromFile(cfg.TorrentPath); err != nil {
 			return client, ClientError{Type: "adding torrent to the client", Origin: err}
 		}
 	}
 
 	client.Torrent = t
-	client.Torrent.SetMaxEstablishedConns(maxConnections)
+	client.Torrent.SetMaxEstablishedConns(cfg.MaxConnections)
 
 	go func() {
 		<-t.GotInfo()
@@ -184,7 +203,7 @@ func (c *Client) Render() {
 	fmt.Println(t.Info().Name)
 	fmt.Println(strings.Repeat("=", len(t.Info().Name)))
 	if c.ReadyForPlayback() {
-		fmt.Printf("Stream: \thttp://localhost:%d\n", c.Port)
+		fmt.Printf("Stream: \thttp://localhost:%d\n", c.Config.Port)
 	}
 	if currentProgress > 0 {
 		fmt.Printf("Progress: \t%s / %s  %.2f%%\n", complete, size, c.percentage())
@@ -192,7 +211,7 @@ func (c *Client) Render() {
 	if currentProgress < t.Info().TotalLength() {
 		fmt.Printf("Download speed: %s\n", downloadSpeed)
 	}
-	if c.Seed {
+	if c.Config.Seed {
 		fmt.Printf("Upload speed: \t%s\n", uploadSpeed)
 	}
 }
