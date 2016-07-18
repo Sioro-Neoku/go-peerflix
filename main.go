@@ -20,24 +20,22 @@ const (
 
 func main() {
 	// Parse flags.
-	var port int
-	var seed, tcp *bool
-	var player *string
-	var maxConnections int
-
-	player = flag.String("player", "", "Open the stream with a video player ("+joinPlayerNames()+")")
-	flag.IntVar(&port, "port", 8080, "Port to stream the video on")
-	seed = flag.Bool("seed", false, "Seed after finished downloading")
-	flag.IntVar(&maxConnections, "conn", 200, "Maximum number of connections")
-	tcp = flag.Bool("tcp", true, "Allow connections via TCP")
+	player := flag.String("player", "", "Open the stream with a video player ("+joinPlayerNames()+")")
+	cfg := NewClientConfig()
+	flag.IntVar(&cfg.Port, "port", cfg.Port, "Port to stream the video on")
+	flag.IntVar(&cfg.TorrentPort, "torrent-port", cfg.TorrentPort, "Port to listen for incoming torrent connections")
+	flag.BoolVar(&cfg.Seed, "seed", cfg.Seed, "Seed after finished downloading")
+	flag.IntVar(&cfg.MaxConnections, "conn", cfg.MaxConnections, "Maximum number of connections")
+	flag.BoolVar(&cfg.TCP, "tcp", cfg.TCP, "Allow connections via TCP")
 	flag.Parse()
 	if len(flag.Args()) == 0 {
 		flag.Usage()
 		os.Exit(exitNoTorrentProvided)
 	}
+	cfg.TorrentPath = flag.Arg(0)
 
 	// Start up the torrent client.
-	client, err := NewClient(flag.Arg(0), port, *seed, *tcp, maxConnections)
+	client, err := NewClient(cfg)
 	if err != nil {
 		log.Fatalf(err.Error())
 		os.Exit(exitErrorInClient)
@@ -46,7 +44,7 @@ func main() {
 	// Http handler.
 	go func() {
 		http.HandleFunc("/", client.GetFile)
-		log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), nil))
+		log.Fatal(http.ListenAndServe(":"+strconv.Itoa(cfg.Port), nil))
 	}()
 
 	// Open selected video player
@@ -55,7 +53,7 @@ func main() {
 			for !client.ReadyForPlayback() {
 				time.Sleep(time.Second)
 			}
-			openPlayer(*player, port)
+			openPlayer(*player, cfg.Port)
 		}()
 	}
 
