@@ -315,9 +315,9 @@ func (c Client) SelectFile() *torrent.File {
 	}
 	fmt.Println()
 	w := tabwriter.NewWriter(os.Stdout, 1, 4, 1, ' ', 0)
-	fmt.Fprintln(w, "#\tPath\tSize (MB)")
+	fmt.Fprintln(w, "#\tPath\tSize")
 	for i, file := range candidates {
-		fmt.Fprintf(w, "%d\t%s\t%d\n", i, file.DisplayPath(), file.Length()/1024/1024)
+		fmt.Fprintf(w, "%d\t%s\t%s\n", i, file.DisplayPath(), humanize.Bytes(uint64(file.Length())))
 	}
 	w.Flush()
 	pos := -1
