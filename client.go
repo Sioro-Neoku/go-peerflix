@@ -7,9 +7,12 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/anacrolix/torrent"
@@ -21,7 +24,10 @@ const clearScreen = "\033[H\033[2J"
 
 const torrentBlockListURL = "http://john.bitsurge.net/public/biglist.p2p.gz"
 
-var isHTTP = regexp.MustCompile(`^https?:\/\/`)
+var (
+	isHTTP  = regexp.MustCompile(`^https?:\/\/`)
+	isVideo = regexp.MustCompile(`\.(mkv|ogm|webm|flv|avi|mov|wmv|mp4|mpe?g|vob)$`)
+)
 
 // ClientError formats errors coming from the client.
 type ClientError struct {
@@ -110,14 +116,6 @@ func NewClient(cfg ClientConfig) (client Client, err error) {
 
 	client.Torrent = t
 	client.Torrent.SetMaxEstablishedConns(cfg.MaxConnections)
-
-	go func() {
-		<-t.GotInfo()
-		t.DownloadAll()
-
-		// Prioritize first 5% of the file.
-		client.getLargestFile().PrioritizeRegion(0, int64(t.NumPieces()/100*5))
-	}()
 
 	go client.addBlocklist()
 
@@ -261,10 +259,27 @@ func (c Client) ReadyForPlayback() bool {
 	return c.percentage() > 5
 }
 
-// GetFile is an http handler to serve the biggest file managed by the client.
+// GetFile is an http handler to serve the file specified in the URL.
 func (c Client) GetFile(w http.ResponseWriter, r *http.Request) {
-	target := c.getLargestFile()
-	entry, err := NewFileReader(target)
+	// clean up request path '/foo+bar.mkv' -> 'foo bar.mkv'
+	path, err := url.QueryUnescape(strings.TrimLeft(r.RequestURI, "/"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// find it by display path
+	var target torrent.File
+	for _, file := range c.Torrent.Files() {
+		if file.DisplayPath() == path {
+			target = file
+		}
+	}
+	if target.Path() == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	entry, err := NewFileReader(&target)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -276,8 +291,42 @@ func (c Client) GetFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	w.Header().Set("Content-Disposition", "attachment; filename=\""+c.Torrent.Info().Name+"\"")
-	http.ServeContent(w, r, target.DisplayPath(), time.Now(), entry)
+	filename := filepath.Base(target.Path())
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+"\"")
+	http.ServeContent(w, r, filename, time.Now(), entry)
+}
+
+// SelectFile asks the user to select a video if needed.
+// If there's a single video, it chosen automatically.
+// If there's no video, the user may select any file.
+// If there are multiple videos, the user may select any of those.
+func (c Client) SelectFile() *torrent.File {
+	candidates := []torrent.File{}
+	for _, file := range c.Torrent.Files() {
+		if isVideo.MatchString(file.Path()) {
+			candidates = append(candidates, file)
+		}
+	}
+	if len(candidates) == 0 {
+		candidates = c.Torrent.Files()
+	}
+	if len(candidates) == 1 {
+		return &candidates[0]
+	}
+	fmt.Println()
+	w := tabwriter.NewWriter(os.Stdout, 1, 4, 1, ' ', 0)
+	fmt.Fprintln(w, "#\tPath\tSize (MB)")
+	for i, file := range candidates {
+		fmt.Fprintf(w, "%d\t%s\t%d\n", i, file.DisplayPath(), file.Length()/1024/1024)
+	}
+	w.Flush()
+	pos := -1
+	for pos < 0 || pos >= len(candidates) {
+		fmt.Println()
+		fmt.Printf("Enter number of file to open [0-%d]\n", len(candidates)-1)
+		fmt.Scanln(&pos)
+	}
+	return &candidates[pos]
 }
 
 func (c Client) percentage() float64 {

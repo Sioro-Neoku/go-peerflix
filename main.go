@@ -47,16 +47,6 @@ func main() {
 		log.Fatal(http.ListenAndServe(":"+strconv.Itoa(cfg.Port), nil))
 	}()
 
-	// Open selected video player
-	if *player != "" {
-		go func() {
-			for !client.ReadyForPlayback() {
-				time.Sleep(time.Second)
-			}
-			openPlayer(*player, cfg.Port)
-		}()
-	}
-
 	// Handle exit signals.
 	interruptChannel := make(chan os.Signal, 1)
 	signal.Notify(interruptChannel,
@@ -72,6 +62,14 @@ func main() {
 			os.Exit(0)
 		}
 	}(interruptChannel)
+
+	<-client.Torrent.GotInfo()
+	log.Printf("Now streaming: %s", client.Torrent.Name())
+
+	// Open selected video player
+	if *player != "" {
+		openPlayer(*player, cfg.Port, client.SelectFile().DisplayPath())
+	}
 
 	// Cli render loop.
 	for {
