@@ -1,10 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"net/url"
 	"os/exec"
 	"runtime"
-	"strconv"
 	"strings"
 )
 
@@ -36,8 +37,8 @@ func (p GenericPlayer) Open(url string) error {
 	return exec.Command(command[0], command[1:]...).Start()
 }
 
-// openPlayer opens a stream using the specified player and port.
-func openPlayer(playerName string, port int) {
+// openPlayer opens a stream using the specified player, port and file path.
+func openPlayer(playerName string, port int, file string) {
 	var player Player
 	playerName = strings.ToLower(playerName)
 	for _, genericPlayer := range genericPlayers {
@@ -49,8 +50,9 @@ func openPlayer(playerName string, port int) {
 		log.Printf("Player '%s' is not supported. Currently supported players are: %s", playerName, joinPlayerNames())
 		return
 	}
-	log.Printf("Playing in %s", playerName)
-	if err := player.Open("http://localhost:" + strconv.Itoa(port)); err != nil {
+	uri := fmt.Sprintf("http://localhost:%d/%s", port, url.QueryEscape(file))
+	log.Printf("Playing in %s: %s", playerName, uri)
+	if err := player.Open(uri); err != nil {
 		log.Printf("Error opening %s: %s\n", playerName, err)
 	}
 }
