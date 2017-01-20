@@ -319,7 +319,10 @@ func (c Client) SelectFile() *torrent.File {
 	for i, file := range candidates {
 		fmt.Fprintf(w, "%d\t%s\t%s\n", i, file.DisplayPath(), humanize.Bytes(uint64(file.Length())))
 	}
-	w.Flush()
+	err := w.Flush()
+	if err != nil {
+		log.Println(err)
+	}
 	pos := -1
 	for pos < 0 || pos >= len(candidates) {
 		fmt.Println()
