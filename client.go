@@ -71,14 +71,16 @@ func NewClient(cfg ClientConfig) (client Client, err error) {
 
 	client.Config = cfg
 
+	blocklist := getBlocklist()
+	torrentConfig := torrent.NewDefaultClientConfig()
+	torrentConfig.DataDir = os.TempDir()
+	torrentConfig.NoUpload = !cfg.Seed
+	torrentConfig.DisableTCP = !cfg.TCP
+	torrentConfig.ListenPort = cfg.TorrentPort
+	torrentConfig.IPBlocklist = blocklist
+
 	// Create client.
-	c, err = torrent.NewClient(&torrent.Config{
-		DataDir:    os.TempDir(),
-		NoUpload:   !cfg.Seed,
-		Seed:       cfg.Seed,
-		DisableTCP: !cfg.TCP,
-		ListenAddr: fmt.Sprintf(":%d", cfg.TorrentPort),
-	})
+	c, err = torrent.NewClient(torrentConfig)
 
 	if err != nil {
 		return client, ClientError{Type: "creating torrent client", Origin: err}
@@ -116,16 +118,19 @@ func NewClient(cfg ClientConfig) (client Client, err error) {
 		t.DownloadAll()
 
 		// Prioritize first 5% of the file.
-		client.getLargestFile().PrioritizeRegion(0, int64(t.NumPieces()/100*5))
+		largestFile := client.getLargestFile()
+		firstPieceIndex := largestFile.Offset() * int64(t.NumPieces()) / t.Length()
+		endPieceIndex := (largestFile.Offset() + largestFile.Length()) * int64(t.NumPieces()) / t.Length()
+		for idx := firstPieceIndex; idx <= endPieceIndex*5/100; idx++ {
+			t.Piece(int(idx)).SetPriority(torrent.PiecePriorityNow)
+		}
 	}()
-
-	go client.addBlocklist()
 
 	return
 }
 
 // Download and add the blocklist.
-func (c *Client) addBlocklist() {
+func getBlocklist() iplist.Ranger {
 	var err error
 	blocklistPath := os.TempDir() + "/go-peerflix-blocklist.gz"
 
@@ -135,32 +140,32 @@ func (c *Client) addBlocklist() {
 
 	if err != nil {
 		log.Printf("Error downloading blocklist: %s", err)
-		return
+		return nil
 	}
 
 	// Load blocklist.
 	blocklistReader, err := os.Open(blocklistPath)
 	if err != nil {
 		log.Printf("Error opening blocklist: %s", err)
-		return
+		return nil
 	}
 
 	// Extract file.
 	gzipReader, err := gzip.NewReader(blocklistReader)
 	if err != nil {
 		log.Printf("Error extracting blocklist: %s", err)
-		return
+		return nil
 	}
 
 	// Read as iplist.
 	blocklist, err := iplist.NewFromReader(gzipReader)
 	if err != nil {
 		log.Printf("Error reading blocklist: %s", err)
-		return
+		return nil
 	}
 
 	log.Printf("Loading blocklist.\nFound %d ranges\n", blocklist.NumRanges())
-	c.Client.SetIPBlockList(blocklist)
+	return blocklist
 }
 
 func downloadBlockList(blocklistPath string) (err error) {
@@ -195,7 +200,8 @@ func (c *Client) Render() {
 	complete := humanize.Bytes(uint64(currentProgress))
 	size := humanize.Bytes(uint64(t.Info().TotalLength()))
 
-	uploadProgress := t.Stats().DataBytesWritten - c.Uploaded
+	bytesWrittenData := t.Stats().BytesWrittenData
+	uploadProgress := (&bytesWrittenData).Int64() - c.Uploaded
 	uploadSpeed := humanize.Bytes(uint64(uploadProgress)) + "/s"
 	c.Uploaded = uploadProgress
 
@@ -217,7 +223,7 @@ func (c *Client) Render() {
 }
 
 func (c Client) getLargestFile() *torrent.File {
-	var target torrent.File
+	var target *torrent.File
 	var maxSize int64
 
 	for _, file := range c.Torrent.Files() {
@@ -227,7 +233,7 @@ func (c Client) getLargestFile() *torrent.File {
 		}
 	}
 
-	return &target
+	return target
 }
 
 /*
