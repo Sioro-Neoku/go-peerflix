@@ -144,6 +144,8 @@ func getBlocklist() iplist.Ranger {
 	}
 
 	// Load blocklist.
+	// #nosec
+	// We trust our temporary directory as we just wrote the file there ourselves.
 	blocklistReader, err := os.Open(blocklistPath)
 	if err != nil {
 		log.Printf("Error opening blocklist: %s", err)
