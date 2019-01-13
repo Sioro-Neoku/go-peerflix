@@ -2,7 +2,6 @@ package main
 
 import (
 	"io"
-	"os"
 
 	"github.com/anacrolix/torrent"
 )
@@ -32,7 +31,7 @@ func NewFileReader(f *torrent.File) (SeekableContent, error) {
 	// We read ahead 1% of the file continuously.
 	reader.SetReadahead(f.Length() / 100)
 	reader.SetResponsive()
-	_, err := reader.Seek(f.Offset(), os.SEEK_SET)
+	_, err := reader.Seek(f.Offset(), io.SeekStart)
 
 	return &FileEntry{
 		File:   f,
