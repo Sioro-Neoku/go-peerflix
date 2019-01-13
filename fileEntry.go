@@ -19,6 +19,11 @@ type FileEntry struct {
 	torrent.Reader
 }
 
+// Seek seeks to the correct file position, paying attention to the offset.
+func (f FileEntry) Seek(offset int64, whence int) (int64, error) {
+	return f.Reader.Seek(offset+f.File.Offset(), whence)
+}
+
 // NewFileReader sets up a torrent file for streaming reading.
 func NewFileReader(f *torrent.File) (SeekableContent, error) {
 	torrent := f.Torrent()
