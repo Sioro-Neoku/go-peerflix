@@ -310,6 +310,8 @@ func downloadFile(URL string) (fileName string, err error) {
 		}
 	}()
 
+	// #nosec
+	// We are downloading the url the user passed to us, we trust it is a torrent file.
 	response, err := http.Get(URL)
 	if err != nil {
 		return
