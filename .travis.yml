@@ -7,4 +7,4 @@ install:
   - go get github.com/alecthomas/gometalinter
   - gometalinter --install --update
 script:
-  - gometalinter ./... --deadline=30s
+  - gometalinter ./... --deadline=90s
