@@ -19,7 +19,7 @@ type FileEntry struct {
 }
 
 // Seek seeks to the correct file position, paying attention to the offset.
-func (f FileEntry) Seek(offset int64, whence int) (int64, error) {
+func (f *FileEntry) Seek(offset int64, whence int) (int64, error) {
 	return f.Reader.Seek(offset+f.File.Offset(), whence)
 }
 
