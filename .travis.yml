@@ -1,12 +1,10 @@
 sudo: false
 language: go
 go:
-  - 1.5
-  - 1.6
-  - 1.7beta2
+  - 1.11
 install:
   - go get
   - go get github.com/alecthomas/gometalinter
   - gometalinter --install --update
 script:
-  - gometalinter ./... --deadline=30s
+  - gometalinter ./... --deadline=90s

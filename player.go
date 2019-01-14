@@ -33,6 +33,8 @@ func (p GenericPlayer) Open(url string) error {
 	}
 	command = append(command, p.Args...)
 	command = append(command, url)
+	// #nosec
+	// It is the user's responsibility to pass the correct arguments to open the url.
 	return exec.Command(command[0], command[1:]...).Start()
 }
 

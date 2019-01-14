@@ -2,7 +2,6 @@ package main
 
 import (
 	"io"
-	"os"
 
 	"github.com/anacrolix/torrent"
 )
@@ -16,11 +15,11 @@ type SeekableContent interface {
 // FileEntry helps reading a torrent file.
 type FileEntry struct {
 	*torrent.File
-	*torrent.Reader
+	torrent.Reader
 }
 
 // Seek seeks to the correct file position, paying attention to the offset.
-func (f FileEntry) Seek(offset int64, whence int) (int64, error) {
+func (f *FileEntry) Seek(offset int64, whence int) (int64, error) {
 	return f.Reader.Seek(offset+f.File.Offset(), whence)
 }
 
@@ -32,7 +31,7 @@ func NewFileReader(f *torrent.File) (SeekableContent, error) {
 	// We read ahead 1% of the file continuously.
 	reader.SetReadahead(f.Length() / 100)
 	reader.SetResponsive()
-	_, err := reader.Seek(f.Offset(), os.SEEK_SET)
+	_, err := reader.Seek(f.Offset(), io.SeekStart)
 
 	return &FileEntry{
 		File:   f,
