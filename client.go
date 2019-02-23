@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -206,22 +207,28 @@ func (c *Client) Render() {
 	uploadProgress := (&bytesWrittenData).Int64() - c.Uploaded
 	uploadSpeed := humanize.Bytes(uint64(uploadProgress)) + "/s"
 	c.Uploaded = uploadProgress
+	percentage := c.percentage()
+	totalLength := t.Info().TotalLength()
 
-	print(clearScreen)
-	fmt.Println(t.Info().Name)
-	fmt.Println(strings.Repeat("=", len(t.Info().Name)))
+	output := bufio.NewWriter(os.Stdout)
+
+	fmt.Fprint(output, clearScreen)
+	fmt.Fprint(output, t.Info().Name+"\n")
+	fmt.Fprint(output, strings.Repeat("=", len(t.Info().Name))+"\n")
 	if c.ReadyForPlayback() {
-		fmt.Printf("Stream: \thttp://localhost:%d\n", c.Config.Port)
+		fmt.Fprintf(output, "Stream: \thttp://localhost:%d\n", c.Config.Port)
 	}
 	if currentProgress > 0 {
-		fmt.Printf("Progress: \t%s / %s  %.2f%%\n", complete, size, c.percentage())
+		fmt.Fprintf(output, "Progress: \t%s / %s  %.2f%%\n", complete, size, percentage)
 	}
-	if currentProgress < t.Info().TotalLength() {
-		fmt.Printf("Download speed: %s\n", downloadSpeed)
+	if currentProgress < totalLength {
+		fmt.Fprintf(output, "Download speed: %s\n", downloadSpeed)
 	}
 	if c.Config.Seed {
-		fmt.Printf("Upload speed: \t%s\n", uploadSpeed)
+		fmt.Fprintf(output, "Upload speed: \t%s", uploadSpeed)
 	}
+
+	output.Flush()
 }
 
 func (c Client) getLargestFile() *torrent.File {
