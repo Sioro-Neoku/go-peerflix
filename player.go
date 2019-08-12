@@ -41,10 +41,10 @@ func (p GenericPlayer) Open(url string) error {
 // openPlayer opens a stream using the specified player and port.
 func openPlayer(playerName string, port int) {
 	var player Player
-	playerName = strings.ToLower(playerName)
 	for _, genericPlayer := range genericPlayers {
-		if strings.ToLower(genericPlayer.Name) == playerName {
+		if strings.EqualFold(genericPlayer.Name, playerName) {
 			player = genericPlayer
+			break
 		}
 	}
 	if player == nil {
@@ -59,9 +59,9 @@ func openPlayer(playerName string, port int) {
 
 // joinPlayerNames returns a list of supported video players ready for display.
 func joinPlayerNames() string {
-	var names []string
-	for _, player := range genericPlayers {
-		names = append(names, player.Name)
+	names := make([]string, len(genericPlayers))
+	for i := range genericPlayers {
+		names[i] = genericPlayers[i].Name
 	}
 	return strings.Join(names, ", ")
 }
