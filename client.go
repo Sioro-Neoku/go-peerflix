@@ -74,7 +74,7 @@ func NewClient(cfg ClientConfig) (client Client, err error) {
 
 	blocklist := getBlocklist()
 	torrentConfig := torrent.NewDefaultClientConfig()
-	torrentConfig.DataDir = os.TempDir()
+	torrentConfig.DataDir = os.TempDir() + "/go-peerflix"
 	torrentConfig.NoUpload = !cfg.Seed
 	torrentConfig.DisableTCP = !cfg.TCP
 	torrentConfig.ListenPort = cfg.TorrentPort
