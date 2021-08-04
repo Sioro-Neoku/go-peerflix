@@ -27,6 +27,7 @@ func main() {
 	flag.BoolVar(&cfg.Seed, "seed", cfg.Seed, "Seed after finished downloading")
 	flag.IntVar(&cfg.MaxConnections, "conn", cfg.MaxConnections, "Maximum number of connections")
 	flag.BoolVar(&cfg.TCP, "tcp", cfg.TCP, "Allow connections via TCP")
+	flag.StringVar(&cfg.DataDir, "datadir", os.TempDir(), "Where to download torrent data")
 	flag.Parse()
 	if len(flag.Args()) == 0 {
 		flag.Usage()

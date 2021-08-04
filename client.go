@@ -46,6 +46,7 @@ type Client struct {
 // ClientConfig specifies the behaviour of a client.
 type ClientConfig struct {
 	TorrentPath    string
+	DataDir        string
 	Port           int
 	TorrentPort    int
 	Seed           bool
@@ -74,7 +75,7 @@ func NewClient(cfg ClientConfig) (client Client, err error) {
 
 	blocklist := getBlocklist()
 	torrentConfig := torrent.NewDefaultClientConfig()
-	torrentConfig.DataDir = os.TempDir()
+	torrentConfig.DataDir = cfg.DataDir
 	torrentConfig.NoUpload = !cfg.Seed
 	torrentConfig.DisableTCP = !cfg.TCP
 	torrentConfig.ListenPort = cfg.TorrentPort
