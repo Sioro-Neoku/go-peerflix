@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -22,7 +23,7 @@ func main() {
 	// Parse flags.
 	player := flag.String("player", "", "Open the stream with a video player ("+joinPlayerNames()+")")
 	cfg := NewClientConfig()
-	flag.IntVar(&cfg.Port, "port", cfg.Port, "Port to stream the video on")
+	flag.IntVar(&cfg.Port, "port", 0, "Port to stream the video on")
 	flag.IntVar(&cfg.TorrentPort, "torrent-port", cfg.TorrentPort, "Port to listen for incoming torrent connections")
 	flag.BoolVar(&cfg.Seed, "seed", cfg.Seed, "Seed after finished downloading")
 	flag.IntVar(&cfg.MaxConnections, "conn", cfg.MaxConnections, "Maximum number of connections")
@@ -34,6 +35,19 @@ func main() {
 	}
 	cfg.TorrentPath = flag.Arg(0)
 
+	ln, err := net.Listen("tcp", ":"+strconv.Itoa(cfg.Port))
+	if err != nil {
+		log.Fatalf("net.Listen: %s", err)
+	}
+
+	_, portStr, _ := net.SplitHostPort(ln.Addr().String())
+
+	port, err := strconv.ParseInt(portStr, 10, 64)
+	if err != nil {
+		log.Fatalf("strconv.ParseInt: %s", err)
+	}
+	cfg.Port = int(port)
+
 	// Start up the torrent client.
 	client, err := NewClient(cfg)
 	if err != nil {
@@ -44,7 +58,7 @@ func main() {
 	// Http handler.
 	go func() {
 		http.HandleFunc("/", client.GetFile)
-		log.Fatal(http.ListenAndServe(":"+strconv.Itoa(cfg.Port), nil))
+		log.Fatal(http.Serve(ln, nil))
 	}()
 
 	// Open selected video player
