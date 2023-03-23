@@ -17,6 +17,7 @@ const (
 	_ = iota
 	exitNoTorrentProvided
 	exitErrorInClient
+	exitErrSplitHostPort
 )
 
 func main() {
@@ -40,7 +41,11 @@ func main() {
 		log.Fatalf("net.Listen: %s", err)
 	}
 
-	_, portStr, _ := net.SplitHostPort(ln.Addr().String())
+	_, portStr, err := net.SplitHostPort(ln.Addr().String())
+	if err != nil {
+		log.Fatal(err.Error())
+		os.Exit(exitErrSplitHostPort)
+	}
 
 	port, err := strconv.ParseInt(portStr, 10, 64)
 	if err != nil {
